@@ -2,6 +2,7 @@ package com.appeaser.deckviewsample;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.webkit.WebView;
 
 import com.squareup.picasso.Target;
 
@@ -20,7 +21,7 @@ public class Datum implements Parcelable {
 
     public int id;
     public String headerTitle, link;
-    public Target target;
+    public WebView target;
 
     public Datum() {
         // Nothing

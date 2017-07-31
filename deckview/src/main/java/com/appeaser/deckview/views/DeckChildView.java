@@ -11,12 +11,16 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.net.http.SslError;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import com.appeaser.deckview.R;
@@ -68,7 +72,7 @@ public class DeckChildView<T> extends FrameLayout implements
     AnimateableDeckChildViewBounds mViewBounds;
 
     View mContent;
-    DeckChildViewThumbnail mThumbnailView;
+    DeckChildWebView mThumbnailView;
     DeckChildViewHeader mHeaderView;
     DeckChildViewCallbacks<T> mCb;
 
@@ -146,7 +150,7 @@ public class DeckChildView<T> extends FrameLayout implements
         // Bind the views
         mContent = findViewById(R.id.task_view_content);
         mHeaderView = (DeckChildViewHeader) findViewById(R.id.task_view_bar);
-        mThumbnailView = (DeckChildViewThumbnail) findViewById(R.id.task_view_thumbnail);
+        mThumbnailView = (DeckChildWebView) findViewById(R.id.deck_view_webview);
         mThumbnailView.updateClipToTaskBar(mHeaderView);
     }
 
@@ -620,13 +624,13 @@ public class DeckChildView<T> extends FrameLayout implements
         mKey = null;
     }
 
-    public Bitmap getThumbnail() {
-        if (mThumbnailView != null) {
-            return mThumbnailView.getThumbnail();
-        }
-
-        return null;
-    }
+//    public Bitmap getThumbnail() {
+//        if (mThumbnailView != null) {
+//            return mThumbnailView.getThumbnail();
+//        }
+//
+//        return null;
+//    }
 
     public void onDataLoaded(T key, Bitmap thumbnail, Drawable headerIcon,
                              String headerTitle, int headerBgColor) {
@@ -635,7 +639,40 @@ public class DeckChildView<T> extends FrameLayout implements
 
         if (mThumbnailView != null && mHeaderView != null) {
             // Bind each of the views to the new task data
-            mThumbnailView.rebindToTask(thumbnail);
+           // mThumbnailView.rebindToTask(thumbnail);
+            mHeaderView.rebindToTask(headerIcon, headerTitle, headerBgColor);
+            // Rebind any listeners
+            mHeaderView.mApplicationIcon.setOnClickListener(this);
+            mHeaderView.mDismissButton.setOnClickListener(this);
+
+            // TODO: Check if this functionality is needed
+            mHeaderView.mApplicationIcon.setOnLongClickListener(this);
+        }
+        mTaskDataLoaded = true;
+    }
+    private class MyWebViewClient extends WebViewClient {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            mThumbnailView.loadUrl(url);
+            return true;
+        }
+
+        @Override
+        public void onReceivedSslError(WebView view, SslErrorHandler handler,
+                                       SslError error) {
+            handler.proceed();
+        }
+    }
+    public void onDataLoaded(T key,  Drawable headerIcon,
+                             String headerTitle, int headerBgColor,String url) {
+        if (!isBound() || !mKey.equals(key))
+            return;
+
+        if (mThumbnailView != null && mHeaderView != null) {
+            // Bind each of the views to the new task data
+            mThumbnailView.getSettings().setJavaScriptEnabled(true);
+            mThumbnailView.loadUrl(url);
+            mThumbnailView.setWebViewClient(new MyWebViewClient());
             mHeaderView.rebindToTask(headerIcon, headerTitle, headerBgColor);
             // Rebind any listeners
             mHeaderView.mApplicationIcon.setOnClickListener(this);
@@ -647,10 +684,11 @@ public class DeckChildView<T> extends FrameLayout implements
         mTaskDataLoaded = true;
     }
 
+
     public void onDataUnloaded() {
         if (mThumbnailView != null && mHeaderView != null) {
             // Unbind each of the views from the task data and remove the task callback
-            mThumbnailView.unbindFromTask();
+           // mThumbnailView.unbindFromTask();
             mHeaderView.unbindFromTask();
             // Unbind any listeners
             mHeaderView.mApplicationIcon.setOnClickListener(null);

@@ -22,10 +22,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.appeaser.deckview.views.DeckChildViewThumbnail
+        <!--<com.appeaser.deckview.views.DeckChildWebView
             android:id="@+id/task_view_thumbnail"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent" />-->
+
+        <com.appeaser.deckview.views.DeckChildWebView
+            android:id="@+id/deck_view_webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
 
         <include layout="@layout/deck_child_view_header" />
     </FrameLayout>

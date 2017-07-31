@@ -5,9 +5,15 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.http.SslError;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import com.appeaser.deckview.views.DeckChildView;
@@ -70,8 +76,18 @@ public class DeckViewSampleActivity extends Activity {
             for (int i = 1; i < 100; i++) {
                 Datum datum = new Datum();
                 datum.id = generateUniqueKey();
-                datum.link = "http://lorempixel.com/" + imageSize + "/" + imageSize
-                        + "/sports/" + "ID " + datum.id + "/";
+                if(i%2==0){
+                    datum.link="http://www.facebook.com";
+                }else if(i%3==0){
+                    datum.link="http://www.twitter.com";
+
+                }else if(i%5==0){
+                    datum.link="http://www.yahoo.com";
+
+                }
+                    else {
+                    datum.link = "http://www.google.com";
+                }
                 datum.headerTitle = "Image ID " + datum.id;
                 mEntries.add(datum);
             }
@@ -91,7 +107,7 @@ public class DeckViewSampleActivity extends Activity {
 
             @Override
             public void unloadViewData(Datum item) {
-                Picasso.with(DeckViewSampleActivity.this).cancelRequest(item.target);
+               // Picasso.with(DeckViewSampleActivity.this).cancelRequest(item.target);
             }
 
             @Override
@@ -127,46 +143,41 @@ public class DeckViewSampleActivity extends Activity {
             });
         }
     }
-
+    private class MyWebViewClient extends WebViewClient {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            view.loadUrl(url);
+            return false;
+        }
+        @Override
+        public void onReceivedSslError(WebView view, SslErrorHandler handler,
+                                       SslError error) {
+            handler.proceed();
+        }
+    }
     void loadViewDataInternal(final Datum datum,
                               final WeakReference<DeckChildView<Datum>> weakView) {
         // datum.target can be null
-        Picasso.with(DeckViewSampleActivity.this).cancelRequest(datum.target);
-
-        datum.target = new Target() {
-            @Override
-            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                // Pass loaded Bitmap to view
-                if (weakView.get() != null) {
-                    weakView.get().onDataLoaded(datum, bitmap,
-                            mDefaultHeaderIcon, datum.headerTitle, Color.DKGRAY);
-                }
-            }
-
-            @Override
-            public void onBitmapFailed(Drawable errorDrawable) {
-                // Loading failed. Pass default thumbnail instead
-                if (weakView.get() != null) {
-                    weakView.get().onDataLoaded(datum, mDefaultThumbnail,
-                            mDefaultHeaderIcon, datum.headerTitle + " Failed", Color.DKGRAY);
-                }
-            }
-
-            @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) {
-                // Pass the default thumbnail for now. It will
-                // be replaced once the target Bitmap has been loaded
-                if (weakView.get() != null) {
-                    weakView.get().onDataLoaded(datum, mDefaultThumbnail,
-                            mDefaultHeaderIcon, "Loading...", Color.DKGRAY);
-                }
-            }
-        };
-
+       // Picasso.with(DeckViewSampleActivity.this).cancelRequest(datum.target);
+        weakView.get().onDataLoaded(datum,
+                mDefaultHeaderIcon, datum.headerTitle, Color.DKGRAY,datum.link);
+//        datum.target = new android.webkit.WebView(this);
+//        datum.target.getSettings().setJavaScriptEnabled(true);
+//        datum.target.setWebViewClient(new MyWebViewClient());
+//        WebSettings settings = datum.target.getSettings();
+//        settings.setDomStorageEnabled(true);
+//
+//        openURL(datum.target);
         // Begin loading
-        Picasso.with(DeckViewSampleActivity.this).load(datum.link).into(datum.target);
+       // Picasso.with(DeckViewSampleActivity.this).load(datum.link).into(datum.target);
     }
+    private void openURL(WebView webView) {
+        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+        webView.setWebChromeClient(new WebChromeClient());
 
+        webView.loadUrl("file:///android_asset/index.html");
+        webView.requestFocus();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
